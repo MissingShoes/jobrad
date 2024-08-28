@@ -1,0 +1,12 @@
+[chat-service]
+base_path=""
+default_message="Hello, how may I help you?"
+
+[chat-service.quart]
+ENV="development"
+DEBUG=true
+TESTING=true
+
+[chat-service.database]
+uri="sqlite+aiosqlite:///test.sqlite"
+echo=false

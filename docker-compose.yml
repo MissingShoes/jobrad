@@ -1,0 +1,53 @@
+version: "3.9"
+services:
+  chat-service-postgres:
+    image: postgres:14
+    environment:
+      - POSTGRES_USER=admin
+      - POSTGRES_PASSWORD=admin
+      - POSTGRES_DB=chat_service
+    ports:
+      - "5432:5432"
+    healthcheck:
+      test: ["CMD", "pg_isready", "-U", "admin", "-d", "chat_service"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 20s
+
+  chat-service-migration:
+    build:
+      context: .
+      ssh:
+        - default
+    command: alembic upgrade head
+    environment:
+      - DATABASE_URI=postgresql+asyncpg://admin:admin@chat-service-postgres:5432/chat_service
+    depends_on:
+      chat-service-postgres:
+        condition: service_healthy
+
+  chat-service:
+    build:
+      context: .
+      ssh:
+        - default
+      args:
+        INSTALL_DEV_DEPS: "true"
+    environment:
+      - DATABASE_URI=postgresql+asyncpg://admin:admin@chat-service-postgres:5432/chat_service
+    ports:
+      - 8080:8080
+    depends_on:
+      chat-service-postgres:
+        condition: service_healthy
+      chat-service-migration:
+        condition: service_completed_successfully
+    healthcheck:
+      test: curl --fail http://localhost:8080/health || exit 1
+      interval: 10s
+      timeout: 5s
+      retries: 10
+      start_period: 5s
+
+
