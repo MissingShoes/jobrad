@@ -160,13 +160,13 @@ Once the service is up and running, you should be able to access the Swagger doc
 
 This project serves as a basic implementation of a chat service backend. While functional, it has several limitations that would need to be addressed for a production-ready system:
 
-Current Limitations:
+**Current Limitations:**
 1. Lack of Authentication: The API is currently unprotected, making it unsuitable for public access.
 2. Minimal User Management: The system only distinguishes between customer and service agent message authors, without proper user roles or permissions.
 3. Limited Testing: The test suite consists of basic end-to-end tests and requires expansion for more comprehensive coverage.
 4. Simplified Data Model: The current model uses a single `chat_messages` table, which may not suffice for complex real-world scenarios.
 
-Potential Enhancements:
+**Potential Enhancements:**
 1. User Management and Authentication:
    - Implement a separate user management service
    - Add authentication with claims-based permissions and TTL
