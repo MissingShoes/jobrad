@@ -20,4 +20,4 @@ RUN poetry install --no-interaction
 ENV PYTHONPATH=/app
 ENV PATH=/app/.venv/bin:$PATH
 
-CMD ["hypercorn", "--config=hypercorn.toml", "chat_service/asgi:app"]
+CMD ["hypercorn", "--bind", "0.0.0.0:8080", "--workers", "1", "chat_service/asgi:app"]
