@@ -2,7 +2,7 @@ import logging
 
 from pydantic import ValidationError
 from quart import Quart, ResponseReturnValue
-from quart_schema import Info, QuartSchema, RequestSchemaValidationError, Tag
+from quart_schema import Info, QuartSchema, RequestSchemaValidationError, Tag, hide
 from sqlalchemy import select
 
 from chat_service.config import settings
@@ -47,6 +47,7 @@ def create_app() -> Quart:
             return {"error": str(e.validation_error)}, 400
 
     @app.route("/health")
+    @hide
     async def health_check() -> ResponseReturnValue:
         """Health check endpoint"""
         async with async_session() as session:
