@@ -19,9 +19,9 @@ depends_on: Union[str, Sequence[str], None] = None
 
 
 def upgrade() -> None:
-    op.add_column(
-        "chat_messages", sa.Column("is_resolution", sa.Boolean(), nullable=False)
-    )
+    op.add_column("chat_messages", sa.Column("is_resolution", sa.Boolean(), nullable=True))
+    op.execute("UPDATE chat_messages SET is_resolution = false")
+    op.alter_column("chat_messages", "is_resolution", nullable=False)
 
 
 def downgrade() -> None:
