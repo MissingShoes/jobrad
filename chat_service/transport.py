@@ -4,10 +4,10 @@ from __future__ import annotations
 
 from datetime import datetime
 from operator import attrgetter
-from typing import Sequence
+from typing import Iterable
 from uuid import UUID
 
-from pydantic import BaseModel, ConfigDict, Field
+from pydantic import BaseModel, ConfigDict, Field, computed_field
 
 from chat_service.model.chat import ChatMessage
 from chat_service.schema import AuthorType
@@ -22,6 +22,10 @@ class PostMessageRequest(BaseModel):
         description="The type of the author of the message."
     )
     content: str = Field(description="The content of the message.")
+    is_resolution: bool = Field(
+        description="Whether or not the message is a resolution message that resolves the session.",
+        default=False,
+    )
 
 
 # response models
@@ -44,6 +48,13 @@ class MessageResponse(_ResponseBaseModel):
         description="The type of the author of the message."
     )
 
+    session_id: UUID = Field(
+        description="The session ID of the chat session.", exclude=True
+    )
+    is_resolution: bool = Field(
+        description="Whether the message resolves the the chat session.", exclude=True
+    )
+
 
 class ChatSessionResponse(_ResponseBaseModel):
     id: UUID
@@ -56,7 +67,7 @@ class ChatSessionResponse(_ResponseBaseModel):
     )
 
     @classmethod
-    def from_chat_messages(cls, messages: Sequence[ChatMessage]) -> ChatSessionResponse:
+    def from_chat_messages(cls, messages: Iterable[ChatMessage]) -> ChatSessionResponse:
         """Instantiate a session response from a list of chat messages. This will fail if no messages are provided."""
         if not messages:
             raise ValueError("No messages received")
@@ -65,9 +76,10 @@ class ChatSessionResponse(_ResponseBaseModel):
             (MessageResponse.model_validate(m) for m in messages),
             key=attrgetter("timestamp"),
         )
+
         return cls(
-            id=messages[0].session_id,
-            created_at=messages[0].timestamp,
+            id=message_responses[0].session_id,
+            created_at=message_responses[0].timestamp,
             messages=message_responses,
         )
 
@@ -77,3 +89,15 @@ class ChatSessionResponse(_ResponseBaseModel):
         self.messages = sorted(
             self.messages + [new_message], key=attrgetter("timestamp")
         )
+
+    @computed_field  # type: ignore[prop-decorator]
+    @property
+    def is_resolved(self) -> bool:
+        """Whether the chat session has been resolved or not."""
+        return any(m.is_resolution for m in self.messages)
+
+
+class UnresolvedSessionsResponse(BaseModel):
+    """A collection of unresolved sessions."""
+
+    sessions: list[ChatSessionResponse]
