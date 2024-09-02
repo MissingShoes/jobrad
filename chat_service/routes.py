@@ -6,11 +6,11 @@ from uuid import UUID
 
 from quart import Blueprint
 from quart_schema import tag, validate_request, validate_response
-from werkzeug.exceptions import NotFound
+from werkzeug.exceptions import BadRequest, NotFound
 
 from chat_service.model import async_session
-from chat_service.services import ChatSessionManager, SessionNotFoundError
-from chat_service.transport import ChatSessionResponse, PostMessageRequest
+from chat_service.services import ChatSessionManager, SessionNotFoundError, SessionResolvedError
+from chat_service.transport import ChatSessionResponse, PostMessageRequest, UnresolvedSessionsResponse
 
 bp = Blueprint("messages", __name__)
 
@@ -58,8 +58,22 @@ async def send_message(
                 session_id=session_id,
                 message_content=data.content,
                 author_type=data.author_type,
+                is_resolution=data.is_resolution,
             )
         except SessionNotFoundError:
             raise NotFound(f"Session {session_id} was not found.")
+        except SessionResolvedError:
+            raise BadRequest("Cannot send message to a resolved chat.")
 
         return chat_session, HTTPStatus.CREATED
+
+
+@tag(["Chat"])
+@bp.get("/sessions/unresolved")
+@validate_response(UnresolvedSessionsResponse)
+async def get_unresolved_sessions() -> UnresolvedSessionsResponse:
+    """Retrieve all unresolved chat sessions."""
+    async with async_session.begin() as session:
+        chat_session_manager = ChatSessionManager(session)
+        unresolved_sessions = await chat_session_manager.get_unresolved_sessions()
+        return UnresolvedSessionsResponse(sessions=unresolved_sessions)
