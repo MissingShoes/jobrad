@@ -21,5 +21,6 @@ class ChatMessage(Base):
     timestamp: Mapped[datetime] = mapped_column(server_default=func.current_timestamp())
     content: Mapped[str]
     author_type: Mapped[AuthorType] = mapped_column(SQLAlchemyEnum(AuthorType))
+    is_resolution: Mapped[bool] = mapped_column(default=False)
 
     session_id: Mapped[UUID]
